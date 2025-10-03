@@ -1,20 +1,37 @@
-import { getApps, initializeApp } from "firebase/app"
-import { getAuth, GoogleAuthProvider } from "firebase/auth"
-import { getFirestore } from "firebase/firestore"
+"use client";
+import { getApps, initializeApp, type FirebaseApp } from "firebase/app";
+import { getAuth, GoogleAuthProvider, type Auth } from "firebase/auth";
+import { getFirestore, type Firestore } from "firebase/firestore";
 
-// Configurações do Firebase vindas do .env.local
+// Lê variáveis de ambiente (podem não existir em build)
+const apiKey = process.env.NEXT_PUBLIC_FB_API_KEY;
+const authDomain = process.env.NEXT_PUBLIC_FB_AUTH_DOMAIN;
+const projectId = process.env.NEXT_PUBLIC_FB_PROJECT_ID;
+const storageBucket = process.env.NEXT_PUBLIC_FB_STORAGE_BUCKET;
+const appId = process.env.NEXT_PUBLIC_FB_APP_ID;
+
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FB_API_KEY!,
-  authDomain: process.env.NEXT_PUBLIC_FB_AUTH_DOMAIN!,
-  projectId: process.env.NEXT_PUBLIC_FB_PROJECT_ID!,
-  storageBucket: process.env.NEXT_PUBLIC_FB_STORAGE_BUCKET!,
-  appId: process.env.NEXT_PUBLIC_FB_APP_ID!,
+  apiKey,
+  authDomain,
+  projectId,
+  storageBucket,
+  appId,
+};
+
+const isBrowser = typeof window !== "undefined";
+const hasConfig = Boolean(apiKey && authDomain && projectId && appId);
+
+let app: FirebaseApp | null = null;
+if (isBrowser && hasConfig) {
+  app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig as {
+    apiKey: string;
+    authDomain: string;
+    projectId: string;
+    storageBucket?: string;
+    appId: string;
+  });
 }
 
-// Evita recriar app se já estiver rodando
-const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig)
-
-// Exporta serviços para usar no resto do app
-export const auth = getAuth(app)             // login de usuários
-export const db = getFirestore(app)          // banco de dados
-export const googleProvider = new GoogleAuthProvider() // login Google
+export const auth: Auth = app ? getAuth(app) : ({} as Auth);
+export const db: Firestore = app ? getFirestore(app) : ({} as Firestore);
+export const googleProvider = new GoogleAuthProvider();
